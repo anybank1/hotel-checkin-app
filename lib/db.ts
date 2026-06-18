@@ -21,13 +21,20 @@ export function computeTotal(input: GuestInput): number {
 async function getD1(): Promise<D1Database | null> {
   try {
     const mod = await import('@opennextjs/cloudflare');
-    const ctx = mod.getCloudflareContext();
-    const db = ctx.env.DB;
+    // Try sync first, then async
+    let ctx;
+    try {
+      ctx = mod.getCloudflareContext();
+    } catch {
+      ctx = await mod.getCloudflareContext({ async: true });
+    }
+    const db = ctx?.env?.DB;
     if (db && typeof db.prepare === 'function') {
       return db;
     }
     return null;
-  } catch {
+  } catch (e) {
+    console.error('getD1 error:', e);
     return null;
   }
 }
