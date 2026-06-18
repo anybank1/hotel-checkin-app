@@ -1,6 +1,6 @@
-# D1 schema for Cloudflare
-# Run: wrangler d1 execute hotel-db --remote --file=db/schema.sql
-# Or locally: wrangler d1 execute hotel-db --local --file=db/schema.sql
+-- D1 schema for Cloudflare
+-- Run: wrangler d1 execute hotel-checkin-db --remote --file=db/schema.sql
+-- Or locally: wrangler d1 execute hotel-checkin-db --local --file=db/schema.sql
 
 CREATE TABLE IF NOT EXISTS guests (
   id              INTEGER PRIMARY KEY AUTOINCREMENT,

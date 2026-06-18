@@ -1,9 +1,9 @@
 import { GuestRecord, GuestInput, DashboardStats, RoomType } from './types';
 
-// ── Total rooms (ปรับได้ที่นี่) ───────────────────────────
+// ── Total rooms (ปรับได้ที่นี่) ─────────────────────────
 export const TOTAL_ROOMS = 19;
 
-// ── Helpers ───────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────
 
 function nightsBetween(checkIn: string, checkOut: string): number {
   const a = new Date(checkIn).getTime();
@@ -16,13 +16,32 @@ export function computeTotal(input: GuestInput): number {
   return nightsBetween(input.check_in, input.check_out) * input.price_per_night;
 }
 
+// ── Environment detection ───────────────────────────────
+
+function isCloudflare(): boolean {
+  try {
+    return typeof caches !== 'undefined' && typeof (caches as any).default !== 'undefined';
+  } catch {
+    return false;
+  }
+}
+
+function isNodeLike(): boolean {
+  try {
+    return typeof process !== 'undefined' && !!process.versions?.node;
+  } catch {
+    return false;
+  }
+}
+
 // ── D1 access (Cloudflare Workers) ────────────────────────
-// getCloudflareContext() is SYNCHRONOUS in @opennextjs/cloudflare v1.x
+// getCloudflareContext() in @opennextjs/cloudflare v1.x returns a Promise when async: true
 
 async function getD1(): Promise<D1Database | null> {
+  if (!isCloudflare()) return null;
   try {
     const mod = await import('@opennextjs/cloudflare');
-    const ctx = mod.getCloudflareContext();
+    const ctx = await mod.getCloudflareContext({ async: true });
     const db = ctx.env.DB;
     if (db && typeof db.prepare === 'function') {
       return db;
@@ -33,52 +52,18 @@ async function getD1(): Promise<D1Database | null> {
   }
 }
 
-function isCloudflare(): boolean {
-  try {
-    // In Cloudflare Workers, caches.default exists
-    return typeof caches !== 'undefined' && typeof (caches as any).default !== 'undefined';
-  } catch {
-    return false;
-  }
-}
-
-// ── SQLite (dev) implementation ───────────────────────────
-
-let _sqliteDb: any = null;
+// ── SQLite (dev) backend ──────────────────────────────────
+// Loaded dynamically only in Node.js dev environment. The separate module
+// ensures better-sqlite3 is never pulled into the Edge bundle.
 
 async function getSqlite() {
-  if (_sqliteDb) return _sqliteDb;
-  const Database = (await import('better-sqlite3')).default;
-  const { join } = await import('path');
-  const { mkdirSync } = await import('fs');
-
-  const dataDir = join(process.cwd(), 'data');
-  mkdirSync(dataDir, { recursive: true });
-  const db = new Database(join(dataDir, 'hotel.db'));
-  db.pragma('journal_mode = WAL');
-
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS guests (
-      id              INTEGER PRIMARY KEY AUTOINCREMENT,
-      full_name       TEXT    NOT NULL,
-      phone           TEXT    NOT NULL,
-      id_card         TEXT    NOT NULL DEFAULT '',
-      address         TEXT    NOT NULL DEFAULT '',
-      room_number     TEXT    NOT NULL,
-      room_type       TEXT    NOT NULL DEFAULT 'Standard',
-      check_in        TEXT    NOT NULL,
-      check_out       TEXT    NOT NULL,
-      price_per_night REAL    NOT NULL DEFAULT 0,
-      total_amount    REAL    NOT NULL DEFAULT 0,
-      created_at      TEXT    NOT NULL DEFAULT (datetime('now', 'localtime'))
-    );
-  `);
-
-  _sqliteDb = db;
-  return db;
+  // Dynamic import of a dev-only module. Webpack for the Edge runtime will
+  // not follow this branch because isNodeLike() is false there.
+  const mod = await import('./sqlite-dev');
+  return mod.getSqliteDb();
 }
 
-// ── Public API (async, auto-detects backend) ──────────────
+// ── Public API (async, auto-detects backend) ─────────────
 
 export async function getAllGuests(search?: string): Promise<GuestRecord[]> {
   const d1 = await getD1();
@@ -93,7 +78,6 @@ export async function getAllGuests(search?: string): Promise<GuestRecord[]> {
       } else {
         result = await d1.prepare(`SELECT * FROM guests ORDER BY id DESC`).all<GuestRecord>();
       }
-      // D1 .all() returns { results, success, meta }
       const guests = result?.results;
       return Array.isArray(guests) ? guests : [];
     } catch (e) {
@@ -102,9 +86,13 @@ export async function getAllGuests(search?: string): Promise<GuestRecord[]> {
     }
   }
 
-  // Fallback: SQLite (dev only — won't run in Cloudflare Workers)
   if (isCloudflare()) {
     console.error('D1 not available in Cloudflare environment');
+    return [];
+  }
+
+  if (!isNodeLike()) {
+    console.error('No supported database backend available');
     return [];
   }
 
@@ -135,7 +123,6 @@ export async function createGuest(input: GuestInput): Promise<GuestRecord> {
     return { id: Number(result.meta.last_row_id), ...input, total_amount: total } as GuestRecord;
   }
 
-  // Fallback: SQLite (dev)
   const db = await getSqlite();
   const result = db.prepare(`
     INSERT INTO guests (full_name, phone, id_card, address, room_number, room_type,
@@ -170,7 +157,6 @@ export async function updateGuest(id: number, input: GuestInput): Promise<GuestR
     return { id, ...input, total_amount: total } as GuestRecord;
   }
 
-  // Fallback: SQLite (dev)
   const db = await getSqlite();
   const result = db.prepare(`
     UPDATE guests SET
@@ -195,7 +181,6 @@ export async function deleteGuest(id: number): Promise<boolean> {
     return (result.meta.changes ?? 0) > 0;
   }
 
-  // Fallback: SQLite (dev)
   const db = await getSqlite();
   const result = db.prepare(`DELETE FROM guests WHERE id = ?`).run(id);
   return result.changes > 0;
@@ -232,4 +217,4 @@ export async function getStats(): Promise<DashboardStats> {
   };
 }
 
-// ── D1 types (see env.d.ts) ───────────────────────────────
+// ── D1 types (see env.d.ts) ─────────────────────────────────────

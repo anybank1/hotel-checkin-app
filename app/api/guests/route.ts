@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAllGuests, createGuest, getStats } from '@/lib/db';
 import { GuestInput } from '@/lib/types';
 
+// OpenNext for Cloudflare bundles nodejs runtime routes into the Worker via
+// the cloudflare-node wrapper. Edge runtime routes must be in a separate
+// function, which is more complex for a simple CRUD app.
 export const runtime = 'nodejs';
 
-// ── GET: list + search + stats ───────────────────────────
+// ── GET: list + search + stats ──────────────────────────
 
 export async function GET(req: NextRequest) {
   try {
@@ -30,11 +33,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ guests, stats });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: msg, stack: err instanceof Error ? err.stack : undefined }, { status: 500 });
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
 
-// ── POST: create ─────────────────────────────────────────
+// ── POST: create ───────────────────────────────
 
 export async function POST(req: NextRequest) {
   try {
@@ -64,6 +67,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(record, { status: 201 });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: msg, stack: err instanceof Error ? err.stack : undefined }, { status: 500 });
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

@@ -11,10 +11,19 @@ env = os.environ.copy()
 env["CLOUDFLARE_API_TOKEN"] = token
 env["CLOUDFLARE_ACCOUNT_ID"] = account
 
+print("=== Building with opennextjs-cloudflare ===")
+build = subprocess.run(
+    ["npx", "opennextjs-cloudflare", "build"],
+    env=env, cwd="/root/hotel-checkin-app"
+)
+if build.returncode != 0:
+    sys.exit(build.returncode)
+
+print("=== Deploying with wrangler ===")
 result = subprocess.run(
     ["npx", "wrangler", "deploy"],
     capture_output=True, text=True, env=env,
-    cwd="/root/hotel-checkin-app", timeout=120
+    cwd="/root/hotel-checkin-app", timeout=300
 )
 print(result.stdout)
 if result.stderr:

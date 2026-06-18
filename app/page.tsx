@@ -20,7 +20,7 @@ export default function HomePage() {
     if (search) params.set('q', search);
     if (filter) params.set('status', filter);
     const res = await fetch(`/api/guests?${params}`);
-    const data = await res.json();
+    const data = (await res.json()) as { guests?: GuestRecord[]; stats?: DashboardStats };
     setGuests(data.guests || []);
     setStats(data.stats || null);
     setLoading(false);
@@ -230,7 +230,8 @@ function GuestFormModal({ editingId, onClose, onSaved }: {
     if (editingId !== null) {
       fetch(`/api/guests`)
         .then(r => r.json())
-        .then(data => {
+        .then((raw) => {
+          const data = raw as { guests?: GuestRecord[] };
           const g = data.guests?.find((x: GuestRecord) => x.id === editingId);
           if (g) {
             setForm({
@@ -260,7 +261,7 @@ function GuestFormModal({ editingId, onClose, onSaved }: {
     });
 
     if (!res.ok) {
-      const data = await res.json();
+      const data = (await res.json()) as { error?: string };
       setError(data.error || 'เกิดข้อผิดพลาด');
       setSaving(false);
       return;

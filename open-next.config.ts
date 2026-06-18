@@ -11,7 +11,7 @@ const config: OpenNextConfig = {
       queue: "direct",
     },
   },
-  edgeExternals: ["node:crypto"],
+  edgeExternals: ["node:crypto", "better-sqlite3"],
   middleware: {
     external: true,
     override: {

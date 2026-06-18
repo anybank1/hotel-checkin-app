@@ -4,6 +4,9 @@ interface CloudflareEnv {
   ASSETS: Fetcher;
 }
 
+// These types are now provided by @cloudflare/workers-types,
+// but we keep minimal local interfaces for safety when the package types
+// are not available during dev mode.
 interface D1Database {
   prepare(query: string): D1PreparedStatement;
 }

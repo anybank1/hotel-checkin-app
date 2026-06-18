@@ -11,3 +11,9 @@ database_id = "8d2df348-8d78-4f25-9776-5d222cec81bd"
 
 [observability]
 enabled = true
+
+# Cloudflare Pages requirements
+# Pages transforms a wrangler.toml with [pages_build_output_dir] etc. but
+# when using @opennextjs/cloudflare we deploy a Worker with static assets
+# rather than a Pages project, which is the recommended pattern for
+# Next.js on Cloudflare.
