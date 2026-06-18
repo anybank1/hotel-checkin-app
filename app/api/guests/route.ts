@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllGuests, createGuest, getStats } from '@/lib/db';
-import { GuestInput, ADMIN_PASSWORD } from '@/lib/types';
+import { GuestInput, ADMIN_PASSWORD, DEFAULT_ROOM_TYPE } from '@/lib/types';
 
 export const runtime = 'nodejs';
 
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
       id_card: (body.id_card || '').trim(),
       address: (body.address || '').trim(),
       room_number: body.room_number.trim(),
-      room_type: body.room_type || 'Standard',
+      room_type: body.room_type || DEFAULT_ROOM_TYPE,
       check_in: body.check_in,
       check_out: body.check_out,
       price_per_night: Number(body.price_per_night),

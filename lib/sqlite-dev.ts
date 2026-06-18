@@ -22,7 +22,7 @@ export function getSqliteDb(): Database.Database {
       id_card         TEXT    NOT NULL DEFAULT '',
       address         TEXT    NOT NULL DEFAULT '',
       room_number     TEXT    NOT NULL,
-      room_type       TEXT    NOT NULL DEFAULT 'Standard',
+      room_type       TEXT    NOT NULL DEFAULT 'Standard Double Bed',
       check_in        TEXT    NOT NULL,
       check_out       TEXT    NOT NULL,
       price_per_night REAL    NOT NULL DEFAULT 0,

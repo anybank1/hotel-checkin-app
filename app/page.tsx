@@ -1,6 +1,6 @@
 'use client';
 
-import { GuestRecord, DashboardStats, ActivityLog, RoomType, ROOM_PRICES, APP_PASSWORD, ADMIN_PASSWORD } from '@/lib/types';
+import { GuestRecord, DashboardStats, ActivityLog, RoomType, ROOM_PRICES, DEFAULT_ROOM_TYPE, APP_PASSWORD, ADMIN_PASSWORD } from '@/lib/types';
 import { Users, BedDouble, Wallet, TrendingUp, Search, Plus, Pencil, Trash2, X, Download, ScrollText, Eye, EyeOff, Lock } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 
@@ -402,8 +402,8 @@ function GuestFormModal({ editingId, onClose, onSaved }: {
 }) {
   const [form, setForm] = useState({
     full_name: '', phone: '', id_card: '', address: '',
-    room_number: '', room_type: 'Standard' as RoomType,
-    check_in: '', check_out: '', price_per_night: String(ROOM_PRICES.Standard),
+    room_number: '', room_type: DEFAULT_ROOM_TYPE,
+    check_in: '', check_out: '', price_per_night: String(ROOM_PRICES[DEFAULT_ROOM_TYPE]),
     recorded_by: '',
   });
   const [error, setError] = useState('');
@@ -492,9 +492,11 @@ function GuestFormModal({ editingId, onClose, onSaved }: {
             </Field>
             <Field label="ประเภทห้อง">
               <select value={form.room_type} onChange={e => handleRoomTypeChange(e.target.value as RoomType)} className="form-input">
-                <option value="Standard">Standard (฿550/คืน)</option>
-                <option value="Deluxe">Deluxe (฿800/คืน)</option>
-                <option value="Family">Family (฿1,200/คืน)</option>
+                {Object.keys(ROOM_PRICES).map((rt) => (
+                  <option key={rt} value={rt}>
+                    {rt} (฿{ROOM_PRICES[rt as RoomType].toLocaleString('th-TH')}/คืน)
+                  </option>
+                ))}
               </select>
             </Field>
           </div>

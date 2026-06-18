@@ -1,10 +1,19 @@
-export type RoomType = 'Standard' | 'Deluxe' | 'Family';
+export type RoomType =
+  | 'Standard Double Bed'
+  | 'Standard Twin Beds'
+  | 'Double Bed with Terrace'
+  | 'Twin Beds with Terrace'
+  | 'Triple Bed';
 
 export const ROOM_PRICES: Record<RoomType, number> = {
-  Standard: 550,
-  Deluxe: 800,
-  Family: 1200,
+  'Standard Double Bed': 550,
+  'Standard Twin Beds': 600,
+  'Double Bed with Terrace': 650,
+  'Twin Beds with Terrace': 650,
+  'Triple Bed': 750,
 };
+
+export const DEFAULT_ROOM_TYPE: RoomType = 'Standard Double Bed';
 
 export const APP_PASSWORD = '202712';
 export const ADMIN_PASSWORD = '1112';
