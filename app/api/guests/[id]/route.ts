@@ -1,0 +1,60 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { updateGuest, deleteGuest } from '@/lib/db';
+import { GuestInput } from '@/lib/types';
+
+export const runtime = 'nodejs';
+
+// ── PUT: update ──────────────────────────────────────────
+
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id: idStr } = await params;
+  const id = Number(idStr);
+  const body = await req.json() as Partial<GuestInput>;
+
+  if (!body.full_name || !body.phone || !body.room_number ||
+      !body.check_in || !body.check_out || !body.price_per_night) {
+    return NextResponse.json(
+      { error: 'กรุณากรอกข้อมูลให้ครบถ้วน' },
+      { status: 400 }
+    );
+  }
+
+  const input: GuestInput = {
+    full_name: body.full_name.trim(),
+    phone: body.phone.trim(),
+    id_card: (body.id_card || '').trim(),
+    address: (body.address || '').trim(),
+    room_number: body.room_number.trim(),
+    room_type: body.room_type || 'Standard',
+    check_in: body.check_in,
+    check_out: body.check_out,
+    price_per_night: Number(body.price_per_night),
+  };
+
+  const record = await updateGuest(id, input);
+  if (!record) {
+    return NextResponse.json({ error: 'ไม่พบรายการ' }, { status: 404 });
+  }
+
+  return NextResponse.json(record);
+}
+
+// ── DELETE ───────────────────────────────────────────────
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id: idStr } = await params;
+  const id = Number(idStr);
+  const success = await deleteGuest(id);
+
+  if (!success) {
+    return NextResponse.json({ error: 'ไม่พบรายการ' }, { status: 404 });
+  }
+
+  return NextResponse.json({ success: true });
+}

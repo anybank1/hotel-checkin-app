@@ -1,0 +1,10 @@
+node_modules/
+.next/
+.open-next/
+data/
+*.db
+*.db-wal
+*.db-shm
+.env
+.env.local
+.wrangler/
