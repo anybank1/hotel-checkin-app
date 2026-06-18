@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllGuests, createGuest, getStats } from '@/lib/db';
-import { GuestInput } from '@/lib/types';
+import { GuestInput, ADMIN_PASSWORD } from '@/lib/types';
 
-// OpenNext for Cloudflare bundles nodejs runtime routes into the Worker via
-// the cloudflare-node wrapper. Edge runtime routes must be in a separate
-// function, which is more complex for a simple CRUD app.
 export const runtime = 'nodejs';
 
-// ── GET: list + search + stats ──────────────────────────
+// ── GET: list + search + stats ───────────────────────────
 
 export async function GET(req: NextRequest) {
   try {
@@ -37,7 +34,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// ── POST: create ───────────────────────────────
+// ── POST: create ─────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   try {
@@ -61,6 +58,7 @@ export async function POST(req: NextRequest) {
       check_in: body.check_in,
       check_out: body.check_out,
       price_per_night: Number(body.price_per_night),
+      recorded_by: (body.recorded_by || '').trim(),
     };
 
     const record = await createGuest(input);

@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { updateGuest, deleteGuest } from '@/lib/db';
-import { GuestInput } from '@/lib/types';
+import { GuestInput, ADMIN_PASSWORD } from '@/lib/types';
 
-// OpenNext for Cloudflare bundles nodejs runtime routes into the Worker via
-// the cloudflare-node wrapper. Edge runtime routes must be in a separate
-// function, which is more complex for a simple CRUD app.
 export const runtime = 'nodejs';
 
-// ── PUT: update ───────────────────────────────
+// ── PUT: update ──────────────────────────────────────────
 
 export async function PUT(
   req: NextRequest,
@@ -36,6 +33,7 @@ export async function PUT(
       check_in: body.check_in,
       check_out: body.check_out,
       price_per_night: Number(body.price_per_night),
+      recorded_by: (body.recorded_by || '').trim(),
     };
 
     const record = await updateGuest(id, input);
@@ -50,7 +48,7 @@ export async function PUT(
   }
 }
 
-// ── DELETE ───────────────────────────────
+// ── DELETE (requires password) ───────────────────────────
 
 export async function DELETE(
   req: NextRequest,
@@ -59,8 +57,16 @@ export async function DELETE(
   try {
     const { id: idStr } = await params;
     const id = Number(idStr);
-    const success = await deleteGuest(id);
+    const body = await req.json().catch(() => ({})) as { password?: string };
 
+    if (body.password !== ADMIN_PASSWORD) {
+      return NextResponse.json(
+        { error: 'รหัสผ่านไม่ถูกต้อง' },
+        { status: 403 }
+      );
+    }
+
+    const success = await deleteGuest(id);
     if (!success) {
       return NextResponse.json({ error: 'ไม่พบรายการ' }, { status: 404 });
     }
